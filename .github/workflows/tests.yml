@@ -1,0 +1,48 @@
+name: Tests
+
+on:
+  workflow_call:
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-24.04-arm
+    
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: ${{ vars.DATABASE_USER }}
+          POSTGRES_DB: ${{ vars.DATABASE_NAME }}
+          POSTGRES_HOST_AUTH_METHOD: trust
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Generate Environment File
+        run: |
+          cat > .env.test << EOF
+          PROJECT_NAME=${{ github.repository }}
+          ENVIRONMENT=development
+          # Add more environment variables as needed
+          EOF
+
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set Up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Run Bun Install
+        run: bun install
+
+      - name: Run Unit Tests
+        run: bun run test:unit
+
+      - name: Run E2E Tests
+        run: bun run test:e2e

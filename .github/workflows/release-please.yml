@@ -1,0 +1,33 @@
+name: Release Please
+
+on:
+  workflow_call:
+    inputs:
+      path:
+        required: false
+        type: string
+        default: .
+    secrets:
+      RELEASE_PLEASE:
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-please-${{ github.workflow }}-${{ github.ref }}-${{ inputs.path }}
+  cancel-in-progress: true
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Run Release Please
+        uses: googleapis/release-please-action@v5
+        with:
+          release-type: node
+          token: ${{ secrets.RELEASE_PLEASE }}
+          path: ${{ inputs.path }}

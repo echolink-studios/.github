@@ -1,0 +1,38 @@
+name: Publish Package
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    name: Build and Publish
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set Up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          registries: "@${{ github.repository_owner }}:https://npm.pkg.github.com/|$GITHUB_TOKEN"
+
+      - name: Install Dependencies
+        run: |
+          bun run lib:install --frozen-lockfile --config="../bunfig.toml"
+
+      - name: Build Package
+        run: bun run lib:build
+
+      - name: Publish to GitHub Packages
+        run: bun run lib:publish --config="../../bunfig.toml"
