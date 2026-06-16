@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ github.token }}
+      BUN_CONFIG: ${{ github.workspace }}/bunfig.toml
 
     steps:
       - name: Checkout
@@ -29,10 +30,10 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          bun run lib:install --frozen-lockfile --config="../bunfig.toml"
+          bun run lib:install --frozen-lockfile --config="$BUN_CONFIG"
 
       - name: Build Package
         run: bun run lib:build
 
       - name: Publish to GitHub Packages
-        run: bun run lib:publish --config="../../bunfig.toml"
+        run: bun run lib:publish --config="$BUN_CONFIG"
