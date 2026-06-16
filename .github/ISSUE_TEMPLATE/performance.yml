@@ -1,0 +1,99 @@
+name: ⚡ Performance Issue
+description: Track a performance regression, bottleneck, or high resource usage.
+title: "[Perf]: "
+type: "Bug"
+labels: ["performance"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: ⚡ Description
+      description: What is slow or expensive, and where?
+      placeholder: The X screen takes ~5s to load when... / Build time jumped from 30s to 3min after...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: 📊 Category
+      options:
+        - "Load / startup time"
+        - "UI rendering / jank"
+        - "High CPU usage"
+        - "High memory usage"
+        - "High network usage"
+        - "Slow DB / query"
+        - "Build / compile time"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: metrics
+    attributes:
+      label: 📈 Metrics / Measurements
+      description: Before/after numbers, profiler output, Lighthouse scores, etc.
+      placeholder: |
+        - Action X: ~5000ms (target: <500ms)
+        - Memory peaks at 2GB during Y
+        - Lighthouse Performance: 32
+      render: markdown
+    validations:
+      required: false
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 🔁 Steps to Reproduce
+      placeholder: |
+        1. 
+        2. 
+        3. Observe that...
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 📦 Affected Version / Branch
+      placeholder: e.g. v1.2.0 / main
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 🖥️ Environment
+      placeholder: |
+        - OS / Hardware: 
+        - Runtime / SDK: 
+        - Dataset size / load: 
+      render: markdown
+    validations:
+      required: false
+
+  - type: textarea
+    id: root_cause
+    attributes:
+      label: 🔍 Suspected Root Cause
+      placeholder: Likely caused by... / The N+1 query in... / Introduced in commit...
+    validations:
+      required: false
+
+  - type: textarea
+    id: profiling
+    attributes:
+      label: 🔬 Profiling / Trace Data
+      placeholder: Paste profiler output or link to flame graph / trace file...
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: impl_notes
+    attributes:
+      label: 🛠️ Implementation Notes
+      placeholder: Potential fix... / Caching strategy... / Query optimisation...
+    validations:
+      required: false

@@ -1,0 +1,90 @@
+name: 📖 User Story
+description: A user-facing feature or change, written in story format for the sprint board.
+title: "[Story]: "
+type: "Feature"
+labels: ["user-story"]
+body:
+  - type: textarea
+    id: story
+    attributes:
+      label: 🧑‍💻 Story
+      value: |
+        As a [type of user],
+        I want [an action or capability],
+        So that [a benefit or outcome].
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: ✅ Acceptance Criteria
+      description: Specific, testable conditions that define "done".
+      value: |
+        - [ ] Given [context], when [action], then [outcome].
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
+
+  - type: textarea
+    id: dod
+    attributes:
+      label: 🏁 Definition of Done
+      description: Team-level conditions that must be met before closing (tests, review, docs, etc.).
+      value: |
+        - [ ] Code reviewed and approved
+        - [ ] Unit / integration tests written and passing
+        - [ ] No new lint / type errors introduced
+        - [ ] Relevant docs updated (if applicable)
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🎯 Priority
+      options:
+        - "🔴 Must Have (P0)"
+        - "🟠 Should Have (P1)"
+        - "🟡 Nice to Have (P2)"
+        - "⚪ Future / Backlog (P3)"
+    validations:
+      required: true
+
+  - type: input
+    id: estimate
+    attributes:
+      label: ⏱️ Story Points / Estimate
+      placeholder: e.g. 3 SP / S / M / L / ~2 days
+    validations:
+      required: false
+
+  - type: textarea
+    id: design
+    attributes:
+      label: 🎨 Design / Mockups
+      description: Links to Figma, wireframes, or screenshots.
+      placeholder: Figma link / drag & drop images...
+    validations:
+      required: false
+
+  - type: textarea
+    id: impl_notes
+    attributes:
+      label: 🛠️ Implementation Notes
+      description: Technical approach, relevant files/services, gotchas.
+      placeholder: Should live in... / Consider using... / Watch out for...
+    validations:
+      required: false
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: 🔗 Dependencies / Blocked By
+      placeholder: |
+        - Blocks: #
+        - Blocked by: #
+        - Related: #
+    validations:
+      required: false

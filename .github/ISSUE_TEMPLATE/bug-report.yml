@@ -1,0 +1,108 @@
+name: 🐛 Bug Report
+description: Log a bug to be investigated and fixed.
+title: "[Bug]: "
+type: "Bug"
+labels: ["bug", "needs-triage"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 🐛 Bug Description
+      description: What is broken? Be specific.
+      placeholder: Describe what is wrong...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 🔁 Steps to Reproduce
+      placeholder: |
+        1. 
+        2. 
+        3. 
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: ✅ Expected Behavior
+      placeholder: What should happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: ❌ Actual Behavior
+      placeholder: What actually happens?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 🔥 Severity
+      options:
+        - "Critical – Crash / data loss / security"
+        - "High – Major feature broken, no workaround"
+        - "Medium – Partially broken, workaround exists"
+        - "Low – Minor / cosmetic"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 📦 Affected Version / Branch
+      placeholder: e.g. v1.2.0 / main / feature/xyz
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 🖥️ Environment
+      placeholder: |
+        - OS: 
+        - Runtime / SDK: 
+        - Browser (if applicable): 
+      render: markdown
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 📋 Logs / Stack Trace
+      placeholder: Paste relevant logs or error output...
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: root_cause
+    attributes:
+      label: 🔍 Suspected Root Cause
+      description: If you have any idea where the bug lives, note it here.
+      placeholder: Likely caused by... / Possibly related to...
+    validations:
+      required: false
+
+  - type: textarea
+    id: fix_notes
+    attributes:
+      label: 🛠️ Implementation Notes
+      description: Any notes on how this should be fixed, or approaches to avoid.
+      placeholder: Could be fixed by... / Watch out for...
+    validations:
+      required: false
+
+  - type: input
+    id: linked_pr
+    attributes:
+      label: 🔗 Linked PR
+      placeholder: e.g. #42
+    validations:
+      required: false

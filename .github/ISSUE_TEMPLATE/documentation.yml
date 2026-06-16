@@ -1,0 +1,54 @@
+name: 📚 Documentation Task
+description: Track a docs addition, correction, or update.
+title: "[Docs]: "
+type: "Task"
+labels: ["documentation"]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: 📋 Type
+      options:
+        - "Missing – Needs to be written"
+        - "Incorrect – Contains wrong information"
+        - "Outdated – No longer reflects current state"
+        - "Unclear – Confusing or incomplete"
+        - "Typo / Grammar"
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: 📍 Location
+      description: File path, URL, or section name.
+      placeholder: e.g. /docs/api/README.md or https://docs.example.com/...
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: 📄 Current State
+      description: What does the documentation currently say (or what's missing)?
+      placeholder: Currently the docs say... / There are no docs for...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: ✅ Required Content / Changes
+      description: What should it say, or what needs to be added?
+      placeholder: The docs should cover... / This section needs...
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: 💬 Notes
+      description: Related PRs, source code references, or context for the writer.
+      placeholder: Related to #... / The implementation lives in...
+    validations:
+      required: false

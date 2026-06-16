@@ -1,0 +1,91 @@
+name: 🚀 Feature Request
+description: Propose a new feature or significant improvement for the backlog.
+title: "[Feature]: "
+type: "Feature"
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 💡 Summary
+      description: One or two sentences describing the feature.
+      placeholder: This feature will...
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 🤔 Problem / Motivation
+      description: What problem does this solve? Why does it belong on the board?
+      placeholder: Currently there's no way to... / Users keep asking for... / This unblocks...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: ✨ Proposed Solution
+      description: How should it work? Include UX flow, API shape, or architectural approach as appropriate.
+      placeholder: The feature should...
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: ✅ Acceptance Criteria
+      value: |
+        - [ ] 
+        - [ ] 
+        - [ ] 
+    validations:
+      required: false
+
+  - type: textarea
+    id: impl_notes
+    attributes:
+      label: 🛠️ Implementation Notes
+      description: Relevant services, files, libraries, or technical constraints.
+      placeholder: Touches... / Depends on... / Consider...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🎯 Priority
+      options:
+        - "🔴 Must Have (P0)"
+        - "🟠 Should Have (P1)"
+        - "🟡 Nice to Have (P2)"
+        - "⚪ Future / Backlog (P3)"
+    validations:
+      required: true
+
+  - type: input
+    id: estimate
+    attributes:
+      label: ⏱️ Rough Estimate
+      placeholder: e.g. 5 SP / L / ~1 week
+    validations:
+      required: false
+
+  - type: textarea
+    id: design
+    attributes:
+      label: 🎨 Design / Mockups
+      placeholder: Figma link / drag & drop images...
+    validations:
+      required: false
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: 🔗 Dependencies / Related Issues
+      placeholder: |
+        - Blocks: #
+        - Blocked by: #
+        - Related: #
+    validations:
+      required: false
