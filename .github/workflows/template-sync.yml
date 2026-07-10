@@ -24,6 +24,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           token: ${{ secrets.TEMPLATE_SYNC_TOKEN }}
+          fetch-depth: 0
 
       - name: Sync with template (pull, commit, push)
         id: sync
@@ -38,18 +39,37 @@ jobs:
           git_remote_pull_params: "--allow-unrelated-histories --strategy=recursive -X theirs"
           steps: "prechecks,pull,commit,push"
 
-      - name: Create or update PR
-        if: steps.sync.outputs.pr_branch != ''
+      - name: Find sync branch and create PR
         env:
           GH_TOKEN: ${{ secrets.TEMPLATE_SYNC_TOKEN }}
         run: |
-          BRANCH="${{ steps.sync.outputs.pr_branch }}"
           BASE="${{ github.event.repository.default_branch }}"
           TITLE="chore: sync with template"
+          LABEL="template-sync"
+          HASH="${{ steps.sync.outputs.template_git_hash }}"
           BODY="Merge changes from template repository (\`${{ inputs.upstream_branch }}\` branch).
 
-          Template commit: \`${{ steps.sync.outputs.template_git_hash }}\`"
-          LABEL="template-sync"
+          Template commit: \`${HASH}\`"
+
+          # Find the sync branch that was pushed
+          BRANCH=$(git branch -r --list "origin/chore/template-sync*" --sort=-committerdate | head -1 | sed 's|origin/||' | xargs)
+
+          if [ -z "$BRANCH" ]; then
+            echo "No sync branch found. Nothing to do (repo is already up to date)."
+            exit 0
+          fi
+
+          echo "Found sync branch: $BRANCH"
+
+          # Check if there are actual differences vs the base branch
+          DIFF=$(gh api "repos/${{ github.repository }}/compare/${BASE}...${BRANCH}" --jq '.total_commits' 2>/dev/null || echo "0")
+
+          if [ "$DIFF" = "0" ]; then
+            echo "No commits ahead of $BASE. Nothing to PR."
+            exit 0
+          fi
+
+          echo "$DIFF commit(s) ahead of $BASE."
 
           # Ensure label exists
           gh label create "$LABEL" --color "0E8A16" --description "Automated template sync" 2>/dev/null || true
