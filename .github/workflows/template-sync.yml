@@ -14,7 +14,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  repository-projects: read
 
 jobs:
   sync:
@@ -24,18 +23,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.repository.default_branch }}
           token: ${{ secrets.TEMPLATE_SYNC_TOKEN }}
 
-      - name: Sync with template
+      - name: Sync with template (pull, commit, push)
+        id: sync
         uses: AndreasAugustin/actions-template-sync@v2
         with:
           source_repo_path: echolink-studios/templates
           upstream_branch: ${{ inputs.upstream_branch }}
           source_gh_token: ${{ secrets.TEMPLATE_SYNC_TOKEN }}
           target_gh_token: ${{ secrets.TEMPLATE_SYNC_TOKEN }}
-          pr_title: "chore: sync with template"
-          pr_labels: template-sync
           pr_branch_name_prefix: chore/template-sync
           pr_commit_msg: "chore(template): sync with upstream template"
-          is_force_push_pr: true
+          steps: "prechecks,pull,commit,push"
+
+      - name: Create or update PR
+        if: steps.sync.outputs.pr_branch != ''
+        env:
+          GH_TOKEN: ${{ secrets.TEMPLATE_SYNC_TOKEN }}
+        run: |
+          BRANCH="${{ steps.sync.outputs.pr_branch }}"
+          BASE="${{ github.event.repository.default_branch }}"
+          TITLE="chore: sync with template"
+          BODY="Merge changes from template repository (\`${{ inputs.upstream_branch }}\` branch).
+
+          Template commit: \`${{ steps.sync.outputs.template_git_hash }}\`"
+          LABEL="template-sync"
+
+          # Ensure label exists
+          gh label create "$LABEL" --color "0E8A16" --description "Automated template sync" 2>/dev/null || true
+
+          # Check if PR already exists for this branch
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --base "$BASE" --json number --jq '.[0].number' 2>/dev/null || echo "")
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #$EXISTING_PR already exists. Updating..."
+            gh pr edit "$EXISTING_PR" --title "$TITLE" --body "$BODY"
+          else
+            echo "Creating new PR: $BRANCH -> $BASE"
+            gh pr create --base "$BASE" --head "$BRANCH" --title "$TITLE" --body "$BODY" --label "$LABEL"
+          fi
