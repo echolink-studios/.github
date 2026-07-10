@@ -26,61 +26,85 @@ jobs:
           token: ${{ secrets.TEMPLATE_SYNC_TOKEN }}
           fetch-depth: 0
 
-      - name: Sync with template (pull, commit, push)
-        id: sync
-        uses: AndreasAugustin/actions-template-sync@v2
-        with:
-          source_repo_path: echolink-studios/templates
-          upstream_branch: ${{ inputs.upstream_branch }}
-          source_gh_token: ${{ secrets.TEMPLATE_SYNC_TOKEN }}
-          target_gh_token: ${{ secrets.TEMPLATE_SYNC_TOKEN }}
-          pr_branch_name_prefix: chore/template-sync
-          pr_commit_msg: "chore(template): sync with upstream template"
-          git_remote_pull_params: "--allow-unrelated-histories --strategy=recursive -X theirs"
-          steps: "pull,commit,push"
-
-      - name: Find sync branch and create PR
+      - name: Sync and create PR
         env:
           GH_TOKEN: ${{ secrets.TEMPLATE_SYNC_TOKEN }}
         run: |
+          set -euo pipefail
+
+          TEMPLATE_REPO="https://x-access-token:${GH_TOKEN}@github.com/echolink-studios/templates.git"
+          UPSTREAM_BRANCH="${{ inputs.upstream_branch }}"
           BASE="${{ github.event.repository.default_branch }}"
-          TITLE="chore: sync with template"
+          SYNC_BRANCH="chore/template-sync"
           LABEL="template-sync"
-          HASH="${{ steps.sync.outputs.template_git_hash }}"
-          BODY="Merge changes from template repository (\`${{ inputs.upstream_branch }}\` branch).
+          TITLE="chore: sync with template"
+          IGNORE_FILE=".templatesyncignore"
 
-          Template commit: \`${HASH}\`"
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Find the sync branch that was pushed
-          BRANCH=$(git branch -r --list "origin/chore/template-sync*" --sort=-committerdate | head -1 | sed 's|origin/||' | xargs)
+          # Add template as remote and fetch
+          git remote add template "$TEMPLATE_REPO" 2>/dev/null || git remote set-url template "$TEMPLATE_REPO"
+          git fetch template "$UPSTREAM_BRANCH"
+          TEMPLATE_HASH=$(git rev-parse template/"$UPSTREAM_BRANCH")
+          echo "Template hash: $TEMPLATE_HASH"
 
-          if [ -z "$BRANCH" ]; then
-            echo "No sync branch found. Nothing to do (repo is already up to date)."
+          # Create sync branch from current base
+          git checkout -B "$SYNC_BRANCH" "origin/$BASE"
+
+          # Merge template branch (no squash = proper merge history)
+          if ! git merge template/"$UPSTREAM_BRANCH" \
+            --allow-unrelated-histories \
+            --strategy=recursive \
+            -X theirs \
+            --no-edit \
+            -m "chore(template): merge template ${UPSTREAM_BRANCH} (${TEMPLATE_HASH:0:7})"; then
+            echo "Merge conflict resolved with -X theirs"
+          fi
+
+          # Restore ignored files from base branch
+          if [ -f "$IGNORE_FILE" ]; then
+            echo "Restoring files from $IGNORE_FILE..."
+            while IFS= read -r pattern || [ -n "$pattern" ]; do
+              # Skip empty lines and comments
+              [[ -z "$pattern" || "$pattern" == \#* ]] && continue
+              # If file exists in base: restore it (undo template changes)
+              # If file doesn't exist in base: remove it (undo template addition)
+              if ! git checkout "origin/$BASE" -- $pattern 2>/dev/null; then
+                git rm -rf --ignore-unmatch $pattern 2>/dev/null || true
+              fi
+            done < "$IGNORE_FILE"
+            # Amend the merge commit with restored files
+            git add -A
+            git diff --cached --quiet || git commit --amend --no-edit
+          fi
+
+          # Check if there are actual differences vs base
+          if git diff --quiet "origin/$BASE" HEAD; then
+            echo "No differences after merge. Repo is already up to date."
             exit 0
           fi
 
-          echo "Found sync branch: $BRANCH"
+          # Force push sync branch
+          git push origin "$SYNC_BRANCH" --force
+          echo "Pushed $SYNC_BRANCH"
 
-          # Check if there are actual differences vs the base branch
-          DIFF=$(gh api "repos/${{ github.repository }}/compare/${BASE}...${BRANCH}" --jq '.total_commits' 2>/dev/null || echo "0")
+          # Build PR body
+          BODY="Merge changes from template repository (\`${UPSTREAM_BRANCH}\` branch).
 
-          if [ "$DIFF" = "0" ]; then
-            echo "No commits ahead of $BASE. Nothing to PR."
-            exit 0
-          fi
-
-          echo "$DIFF commit(s) ahead of $BASE."
+          Template commit: \`${TEMPLATE_HASH:0:7}\`"
 
           # Ensure label exists
           gh label create "$LABEL" --color "0E8A16" --description "Automated template sync" 2>/dev/null || true
 
-          # Check if PR already exists for this branch
-          EXISTING_PR=$(gh pr list --head "$BRANCH" --base "$BASE" --json number --jq '.[0].number' 2>/dev/null || echo "")
+          # Create or update PR
+          EXISTING_PR=$(gh pr list --head "$SYNC_BRANCH" --base "$BASE" --json number --jq '.[0].number' 2>/dev/null || echo "")
 
           if [ -n "$EXISTING_PR" ]; then
             echo "PR #$EXISTING_PR already exists. Updating..."
             gh pr edit "$EXISTING_PR" --title "$TITLE" --body "$BODY"
           else
-            echo "Creating new PR: $BRANCH -> $BASE"
-            gh pr create --base "$BASE" --head "$BRANCH" --title "$TITLE" --body "$BODY" --label "$LABEL"
+            echo "Creating new PR: $SYNC_BRANCH -> $BASE"
+            gh pr create --base "$BASE" --head "$SYNC_BRANCH" --title "$TITLE" --body "$BODY" --label "$LABEL"
           fi
