@@ -1,0 +1,64 @@
+name: Notify Derived Repos
+
+on:
+  workflow_call:
+    secrets:
+      TEMPLATE_SYNC_TOKEN:
+        required: true
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Dispatch template-sync to derived repos
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.TEMPLATE_SYNC_TOKEN }}
+          script: |
+            const branch = context.ref.replace('refs/heads/', '');
+            console.log(`Template branch "${branch}" was updated.`);
+            console.log(`Searching for repos with template-sync.yml workflow...`);
+
+            // Find all repos in the org that have the template-sync workflow
+            // This is self-maintaining: add the workflow to a repo = opt in to sync
+            const searchResult = await github.rest.search.code({
+              q: 'filename:template-sync.yml org:echolink-studios path:.github/workflows',
+              per_page: 100
+            });
+
+            // Deduplicate by repo (search may return multiple matches per repo)
+            const repoMap = new Map();
+            for (const item of searchResult.data.items) {
+              const repoName = item.repository.name;
+              if (repoName !== 'templates' && repoName !== '.github') {
+                repoMap.set(repoName, item.repository);
+              }
+            }
+            const targetRepos = [...repoMap.values()];
+
+            console.log(`Found ${targetRepos.length} repos with template-sync workflow:`);
+            targetRepos.forEach(r => console.log(`  - ${r.name}`));
+
+            // Dispatch template-sync event to each repo
+            const results = await Promise.allSettled(
+              targetRepos.map(repo =>
+                github.rest.repos.createDispatchEvent({
+                  owner: 'echolink-studios',
+                  repo: repo.name,
+                  event_type: 'template-sync',
+                  client_payload: { branch }
+                })
+              )
+            );
+
+            results.forEach((result, i) => {
+              const repo = targetRepos[i].name;
+              if (result.status === 'fulfilled') {
+                console.log(`  dispatched -> ${repo}`);
+              } else {
+                console.log(`  failed -> ${repo}: ${result.reason.message}`);
+              }
+            });
+
+            console.log(`\nDone. ${results.filter(r => r.status === 'fulfilled').length}/${targetRepos.length} repos notified.`);
