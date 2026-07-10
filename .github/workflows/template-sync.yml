@@ -35,6 +35,7 @@ jobs:
           target_gh_token: ${{ secrets.TEMPLATE_SYNC_TOKEN }}
           pr_branch_name_prefix: chore/template-sync
           pr_commit_msg: "chore(template): sync with upstream template"
+          git_remote_pull_params: "--allow-unrelated-histories --strategy=recursive -X theirs"
           steps: "prechecks,pull,commit,push"
 
       - name: Create or update PR
