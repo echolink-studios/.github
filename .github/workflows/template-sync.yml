@@ -60,7 +60,11 @@ jobs:
             -X theirs \
             --no-edit \
             -m "chore(template): merge template ${UPSTREAM_BRANCH} (${TEMPLATE_HASH:0:7})"; then
-            echo "Merge conflict resolved with -X theirs"
+            echo "Merge had conflicts. Resolving by accepting all changes..."
+            # For modify/delete conflicts: accept theirs (keep template's version)
+            git checkout --theirs . 2>/dev/null || true
+            git add -A
+            git commit --no-edit
           fi
 
           # Restore ignored files from base branch
@@ -75,9 +79,9 @@ jobs:
                 git rm -rf --ignore-unmatch $pattern 2>/dev/null || true
               fi
             done < "$IGNORE_FILE"
-            # Amend the merge commit with restored files
+            # Commit the ignore restorations as a separate fixup
             git add -A
-            git diff --cached --quiet || git commit --amend --no-edit
+            git diff --cached --quiet || git commit -m "chore(template): restore ignored files"
           fi
 
           # Check if there are actual differences vs base
