@@ -18,24 +18,32 @@ jobs:
           script: |
             const branch = context.ref.replace('refs/heads/', '');
             console.log(`Template branch "${branch}" was updated.`);
-            console.log(`Searching for repos with template-sync.yml workflow...`);
+            console.log(`Scanning org repos for template-sync.yml workflow...`);
 
-            // Find all repos in the org that have the template-sync workflow
-            // This is self-maintaining: add the workflow to a repo = opt in to sync
-            const searchResult = await github.rest.search.code({
-              q: 'filename:template-sync.yml org:echolink-studios path:.github/workflows',
+            // List all org repos and check each one for the template-sync workflow
+            // via the Contents API. This is always accurate (no search index delay)
+            // and avoids the deprecated code search endpoint.
+            const SKIP = new Set(['templates', '.github']);
+            const allRepos = await github.paginate(github.rest.repos.listForOrg, {
+              org: 'echolink-studios',
               per_page: 100
             });
 
-            // Deduplicate by repo (search may return multiple matches per repo)
-            const repoMap = new Map();
-            for (const item of searchResult.data.items) {
-              const repoName = item.repository.name;
-              if (repoName !== 'templates' && repoName !== '.github') {
-                repoMap.set(repoName, item.repository);
-              }
-            }
-            const targetRepos = [...repoMap.values()];
+            const checks = await Promise.allSettled(
+              allRepos
+                .filter(r => !SKIP.has(r.name))
+                .map(r =>
+                  github.rest.repos.getContent({
+                    owner: 'echolink-studios',
+                    repo: r.name,
+                    path: '.github/workflows/template-sync.yml'
+                  }).then(() => r)
+                )
+            );
+
+            const targetRepos = checks
+              .filter(r => r.status === 'fulfilled')
+              .map(r => r.value);
 
             console.log(`Found ${targetRepos.length} repos with template-sync workflow:`);
             targetRepos.forEach(r => console.log(`  - ${r.name}`));
