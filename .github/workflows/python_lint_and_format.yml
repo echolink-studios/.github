@@ -1,0 +1,44 @@
+name: Lint & Format
+
+on:
+  workflow_call:
+
+permissions:
+  contents: write
+
+jobs:
+  lint-and-format:
+    name: Lint and Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+
+      - name: Install Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Auto-fix lint violations
+        run: uv run --frozen ruff check --fix-only
+
+      - name: Format code
+        run: uv run --frozen ruff format
+
+      - name: Commit fixes
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: "style: auto-fix linting and formatting issues"
+
+      - name: Check remaining lint violations
+        run: uv run --frozen ruff check
