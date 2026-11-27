@@ -1,0 +1,22 @@
+name: Fetch Flagture configuration
+description: Fetch the effective Flagture configuration with GitHub OIDC and write it as a Docker Compose env file.
+
+inputs:
+  output-file:
+    description: Path of the env file to write. A leading ~ is expanded to the runner home directory.
+    required: true
+  audience:
+    description: OIDC audience, matching GITHUB_OIDC_AUDIENCE in Flagture.
+    required: false
+    default: flagture-config
+
+runs:
+  using: composite
+  steps:
+    - name: Render Flagture environment file
+      shell: bash
+      env:
+        FLAGTURE_API_URL: https://flagture.echolinkstudios.com/api
+        FLAGTURE_OIDC_AUDIENCE: ${{ inputs.audience }}
+        FLAGTURE_OUTPUT_FILE: ${{ inputs.output-file }}
+      run: node "$GITHUB_ACTION_PATH/render-env.mjs"

@@ -1,0 +1,59 @@
+name: Resolve Environment
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Explicit environment override (e.g., from workflow_dispatch)'
+        required: false
+        type: string
+        default: ''
+    outputs:
+      environment:
+        description: 'Lowercase environment identifier (development, integration, production)'
+        value: ${{ jobs.resolve.outputs.environment }}
+      environment_name:
+        description: 'Capitalized environment display name (Development, Integration, Production)'
+        value: ${{ jobs.resolve.outputs.environment_name }}
+
+jobs:
+  resolve:
+    name: Resolve environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.resolve.outputs.environment }}
+      environment_name: ${{ steps.resolve.outputs.environment_name }}
+    steps:
+      - id: resolve
+        env:
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          EVENT_INPUT_ENVIRONMENT: ${{ github.event.inputs.environment }}
+        run: |
+          case "${{ github.event_name }}" in
+            pull_request)
+              echo "environment=development" >> "$GITHUB_OUTPUT"
+              echo "environment_name=Development" >> "$GITHUB_OUTPUT"
+              ;;
+            push)
+              echo "environment=integration" >> "$GITHUB_OUTPUT"
+              echo "environment_name=Integration" >> "$GITHUB_OUTPUT"
+              ;;
+            release)
+              echo "environment=production" >> "$GITHUB_OUTPUT"
+              echo "environment_name=Production" >> "$GITHUB_OUTPUT"
+              ;;
+            workflow_dispatch)
+              env_name="${INPUT_ENVIRONMENT:-$EVENT_INPUT_ENVIRONMENT}"
+              if [ -z "$env_name" ]; then
+                echo "Error: 'environment' input is required for workflow_dispatch"
+                exit 1
+              fi
+              env_lower="${env_name,,}"
+              echo "environment=${env_lower}" >> "$GITHUB_OUTPUT"
+              echo "environment_name=${env_name}" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unsupported event: ${{ github.event_name }}"
+              exit 1
+              ;;
+          esac
