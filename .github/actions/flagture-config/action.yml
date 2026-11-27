@@ -13,10 +13,15 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Set up Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: latest
+  
     - name: Render Flagture environment file
       shell: bash
       env:
-        FLAGTURE_API_URL: https://flagture.echolinkstudios.com/api
+        FLAGTURE_API_URL: https://flagture.dev.echolinkstudios.com/api
         FLAGTURE_OIDC_AUDIENCE: ${{ inputs.audience }}
         FLAGTURE_OUTPUT_FILE: ${{ inputs.output-file }}
-      run: node "$GITHUB_ACTION_PATH/render-env.mjs"
+      run: bun "$GITHUB_ACTION_PATH/render-env.mjs"
